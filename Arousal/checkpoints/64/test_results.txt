@@ -1,4 +1,0 @@
-Test Loss :1.7967166 Accuracy-Score :0.5848485730078841 F1-Score :0.5742410506369721
-Confusion matrix: 
-[[57711 22089]
- [34991 22701]]
