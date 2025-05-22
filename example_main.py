@@ -186,7 +186,7 @@ if len(files)>0 :
         torch.cuda.empty_cache()
         gc.collect()
     create_fold(save_path)
-    np.save(save_path +'/pad.npy', feats_specs, allow_pickle=True)
+    np.save(save_path +'/pad.npy', feats, allow_pickle=True)
 
 
 
