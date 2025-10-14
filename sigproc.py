@@ -6,7 +6,7 @@ import numpy as np
 import math
 from scipy.io.wavfile import read #Leer y guardar audios
 import scipy as sp
-from scipy.signal import hilbert, gaussian
+from scipy.signal import hilbert, windows
 from scipy.signal import firwin,lfilter
 
 def check_audio(audio_path):
@@ -294,7 +294,7 @@ def hilb_tr(signal,fs,smooth=True,glen = 0.01):
     if smooth==True:
         #Gaussian Window
         gauslen = int(fs*glen)
-        window = gaussian(gauslen, std=int(gauslen*0.05))
+        window = windows.gaussian(gauslen, std=int(gauslen*0.05))
         #Convolve signal for smmothing
         smooth_env = amplitude_envelope.copy()
         smooth_env = sp.convolve(amplitude_envelope,window)
