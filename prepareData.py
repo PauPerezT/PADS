@@ -50,17 +50,6 @@ class SpeechDataset(Dataset):
     def __len__(self):
         return len(self.files_labels)
     
-    def fold_feats(self, file_feats):
-        feats_array = []
-
-        for tensor_array in file_feats:
-            for spec_res in range(len(np.array(tensor_array))):
-                tensor_h_array = np.hstack(tensor_array[spec_res,:,:]) 
-                feats_array.append(tensor_h_array)
-            
-        feats_vector = np.hstack(feats_array)   
-        return feats_vector
-    
     def class_weight(self):
         labels_vector=np.hstack(self.files_labels)
         weighted_labels = class_weight.compute_class_weight('balanced', classes=np.unique(labels_vector), y=labels_vector)

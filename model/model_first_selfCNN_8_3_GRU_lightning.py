@@ -11,12 +11,36 @@ import matplotlib.pyplot as plt
 from torch.autograd import Variable
 import lightning as L
 
+class SelfConvData(L.LightningDataModule):
+    def __init__(self, train_data, val_data):
+        super().__init__()
+        
+        self.train_tensors = train_data
+        self.val_tensors = val_data
+
+    def setup(self, stage=None):
+        pass
+
+    def train_dataloader(self):
+        if self.train_tensors is None:
+            return None
+
+        return self.train_tensors
+
+    def val_dataloader(self):
+        if self.val_tensors is None:
+            return None
+        
+        return self.val_tensors
+
 
 class SelfConv(L.LightningModule):
-    def __init__(self, loss, train_tensor, dev_tensor, learning_rate= 0.001, dim=256, nc=1,input_shape=[],n_classes=2, hidden_size=128, bidirectional=True,nlayers_Bigru=1, plot=False):
+    def __init__(self, class_weights=None, learning_rate= 0.001, dim=256, nc=1,input_shape=[],n_classes=2, hidden_size=128, bidirectional=True,nlayers_Bigru=1, plot=False):
         super().__init__()
+
+        self.save_hyperparameters(ignore=['class_weights'])
+
         self.plot=plot
-        
         self.hidden_size=hidden_size
         self.bidirectional=bidirectional
         self.nlayers_Bigru=nlayers_Bigru
@@ -26,15 +50,11 @@ class SelfConv(L.LightningModule):
         self.conv1=nn.Conv2d(nc, 8, kernel_size=(1,3), stride=(1,1))
         self.bn1 = nn.BatchNorm2d(8)
         self.pool1=nn.MaxPool2d((1, 2))
-        self.loss = loss
-        self.train_tensor = train_tensor
-        self.dev_tensor = dev_tensor
         self.learning_rate = learning_rate
         self.num_feats = 100
-        
-        
 
-        
+        self.class_weights = class_weights
+
         self.attention_cnn=SelfAttention(8,F.leaky_relu)
         
         outConvShape1,outConvShape2=self._get_conv_output(self.input_shape)
@@ -178,6 +198,13 @@ class SelfConv(L.LightningModule):
         #x = x.view(x.size(0), -1)
         return x,emb
 
+    def get_loss_function(self):
+        if self.class_weights is None:
+            return nn.CrossEntropyLoss()
+        else:
+            weight = self.class_weights.to(self.device)
+            return nn.CrossEntropyLoss(weight=weight)
+
     def training_step(self, batch, batch_idx):
         x, y = batch
 
@@ -186,38 +213,28 @@ class SelfConv(L.LightningModule):
         activation=nn.Softmax(dim=1)
         class_prob=activation(scores)
 
-        loss = self.loss(class_prob, y)
+        loss_function = self.get_loss_function()
+
+        loss = loss_function(class_prob, y)
 
         #tensorboard_logs = {'train_loss': loss}
         
         #return {'loss': loss, 'log': tensorboard_logs}
         return {'loss': loss}
-
-    def train_dataloader(self):
-        return self.train_tensor
     
     def validation_step(self, batch, batch_idx):
         x, y = batch
-
-        #outputs = self(x)
         
         scores, emb = self(x)
 
         activation=nn.Softmax(dim=1)
         class_prob=activation(scores)
 
-        loss = self.loss(class_prob, y)
+        loss_function = self.get_loss_function()
+
+        loss = loss_function(class_prob, y)
 
         return {'val_loss': loss}
-
-    def val_dataloader(self):
-        return self.dev_tensor
-    
-    #def on_validation_epoch_end(self, outputs):
-    #    avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
-    #    #tensorboard_logs = {'avg_val_loss': avg_loss}
-    #    #return {'val_loss': avg_loss, 'log': tensorboard_logs}
-    #    return {'val_loss': avg_loss}
     
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.learning_rate)

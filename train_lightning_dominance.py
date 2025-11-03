@@ -1,6 +1,6 @@
 import torch as t
 from lightning import Trainer
-from model.model_first_selfCNN_8_3_GRU_lightning import  SelfConv
+from model.model_first_selfCNN_8_3_GRU_lightning import  SelfConvData, SelfConv
 import argparse
 
 from Spectrum_Rep import getFeaturesTensors
@@ -50,8 +50,8 @@ if __name__ == '__main__':
     dev_data_set = get_val_dataset(path_labels_csv, feats_normalized, emotional_dimension)
     dev_data = t.utils.data.DataLoader(dev_data_set, **params)
 
-    crit = t.nn.CrossEntropyLoss(weight=weight)
-    model=SelfConv(loss=crit, train_tensor=train_data, dev_tensor=dev_data, learning_rate= lr, nc=3, input_shape = input_shape)
+    model_data = SelfConvData(train_data=train_data, val_data=dev_data)
+    model = SelfConv(class_weights=weight, learning_rate= lr, nc=3, input_shape = input_shape)
     
-    trainer = Trainer(num_nodes=num_gpus,max_epochs=num_epochs, fast_dev_run= False, default_root_dir=path_checkpoints)
-    trainer.fit(model)
+    trainer = Trainer(num_nodes=num_gpus,max_epochs=num_epochs, fast_dev_run=False, default_root_dir=path_checkpoints)
+    trainer.fit(model, datamodule=model_data)
