@@ -10,28 +10,40 @@ import numpy as np
 import matplotlib.pyplot as plt
 from torch.autograd import Variable
 import lightning as L
+from torchmetrics import Accuracy
+
 
 class SelfConvData(L.LightningDataModule):
-    def __init__(self, train_data, val_data):
+    def __init__(self, train_data, val_data, test_data):
         super().__init__()
         
         self.train_tensors = train_data
         self.val_tensors = val_data
+        self.test_data = test_data
 
     def setup(self, stage=None):
         pass
 
     def train_dataloader(self):
         if self.train_tensors is None:
+            print("****** No training data was found ******")
             return None
 
         return self.train_tensors
 
     def val_dataloader(self):
         if self.val_tensors is None:
+            print("****** No validation data was found ******")
             return None
         
         return self.val_tensors
+
+    def test_dataloader(self):
+        if self.test_data is None:
+            print("****** No test data was found ******")
+            return None
+
+        return self.test_data
 
 
 class SelfConv(L.LightningModule):
@@ -54,6 +66,7 @@ class SelfConv(L.LightningModule):
         self.num_feats = 100
 
         self.class_weights = class_weights
+        self.acc = Accuracy(task="multiclass", num_classes=2)
 
         self.attention_cnn=SelfAttention(8,F.leaky_relu)
         
@@ -210,31 +223,64 @@ class SelfConv(L.LightningModule):
 
         scores, emb = self(x)
 
-        activation=nn.Softmax(dim=1)
-        class_prob=activation(scores)
+        #activation=nn.Softmax(dim=1)
+        #class_prob=activation(scores)
 
         loss_function = self.get_loss_function()
 
-        loss = loss_function(class_prob, y)
+        loss = loss_function(scores, y)
+        acc = self.acc(scores, y)
 
-        #tensorboard_logs = {'train_loss': loss}
-        
-        #return {'loss': loss, 'log': tensorboard_logs}
-        return {'loss': loss}
+        self.log("train_loss", loss, prog_bar=True)
+        self.log("train_acc", acc, prog_bar=True)
+
+        return loss
     
     def validation_step(self, batch, batch_idx):
         x, y = batch
-        
+
+        scores, emb = self(x)
+
+        #activation=nn.Softmax(dim=1)
+        #class_prob=activation(scores)
+
+        loss_function = self.get_loss_function()
+
+        loss = loss_function(scores, y)
+        acc = self.acc(scores, y)
+
+        self.log("val_loss", loss, prog_bar=True)
+        self.log("val_acc", acc, prog_bar=True)
+
+        return loss
+
+    def test_step(self, batch, batch_idx):
+        x, y = batch
+
+        scores, emb = self(x)
+
+        #activation=nn.Softmax(dim=1)
+        #class_prob=activation(scores)
+
+        loss_function = self.get_loss_function()
+
+        loss = loss_function(scores, y)
+        acc = self.acc(scores, y)
+
+        self.log("test_loss", loss, prog_bar=True)
+        self.log("test_acc", acc, prog_bar=True)
+
+        return loss
+
+    def predict_step(self, batch, batch_idx):
+        x = batch
+
         scores, emb = self(x)
 
         activation=nn.Softmax(dim=1)
         class_prob=activation(scores)
 
-        loss_function = self.get_loss_function()
-
-        loss = loss_function(class_prob, y)
-
-        return {'val_loss': loss}
+        return class_prob
     
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.learning_rate)

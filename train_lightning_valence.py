@@ -5,7 +5,7 @@ import argparse
 
 from Spectrum_Rep import getFeaturesTensors
 from normalizeFeatures import normalizeFeaturesTensors
-from prepareData import get_train_dataset, get_val_dataset
+from prepareData import get_train_dataset, get_val_dataset, get_test_dataset
 
 emotional_dimension = 'valence'
 
@@ -26,7 +26,7 @@ if __name__ == '__main__':
 
     num_epochs = 200
     lr = 0.001
-    bs=100
+    bs=64
     input_shape = (bs,3,100,64)
     num_gpus = 1
 
@@ -50,8 +50,13 @@ if __name__ == '__main__':
     dev_data_set = get_val_dataset(path_labels_csv, feats_normalized, emotional_dimension)
     dev_data = t.utils.data.DataLoader(dev_data_set, **params)
 
-    model_data = SelfConvData(train_data=train_data, val_data=dev_data)
+    test_data_set = get_test_dataset(path_labels_csv, feats_normalized, emotional_dimension)
+    test_data = t.utils.data.DataLoader(test_data_set, **params)
+
+    model_data = SelfConvData(train_data=train_data, val_data=dev_data, test_data=test_data)
     model = SelfConv(class_weights=weight, learning_rate= lr, nc=3, input_shape = input_shape)
     
     trainer = Trainer(num_nodes=num_gpus,max_epochs=num_epochs, fast_dev_run=False, default_root_dir=path_checkpoints)
+
     trainer.fit(model, datamodule=model_data)
+    trainer.test(model, datamodule=model_data)
