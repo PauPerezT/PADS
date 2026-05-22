@@ -271,13 +271,20 @@ Compared to the original Qt dashboard, the web version:
 
 ### GitHub Pages
 
-The `docs/` folder contains a static landing page that can be served with GitHub Pages at:
+The `docs/` folder contains a static landing page for GitHub Pages:
 
 ```text
 https://pauprezt.github.io/PADS/
 ```
 
 GitHub Pages is static, so it cannot run the PyTorch model directly. It points users to the pip-installable library and the Gradio/Streamlit interfaces.
+
+To enable it in GitHub, use **Settings -> Pages -> Build and deployment -> Deploy from a branch**, then choose:
+
+```text
+Branch: main
+Folder: /docs
+```
 
 ---
 
