@@ -36,10 +36,13 @@ dependencies = [
 [project.optional-dependencies]
 viz = ["plotly>=5.18"]
 web = ["streamlit>=1.30", "plotly>=5.18"]
+gradio = ["gradio>=4.0"]
+all = ["streamlit>=1.30", "plotly>=5.18", "gradio>=4.0"]
 dev = ["pytest>=7", "pytest-cov", "ruff", "black"]
 
 [project.urls]
 Homepage = "https://github.com/PauPerezT/PADS"
+Documentation = "https://pauprezt.github.io/PADS/"
 Issues = "https://github.com/PauPerezT/PADS/issues"
 
 [tool.setuptools.packages.find]

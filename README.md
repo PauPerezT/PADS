@@ -11,7 +11,9 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-green.svg)](LICENSE)
 [![PyTorch](https://img.shields.io/badge/PyTorch-%E2%89%A52.0-EE4C2C.svg)](https://pytorch.org/)
 [![Streamlit](https://img.shields.io/badge/web-Streamlit-FF4B4B.svg)](https://streamlit.io/)
-[![Tests](https://img.shields.io/badge/tests-9%2F9_passing-brightgreen.svg)](#testing)
+[![Gradio](https://img.shields.io/badge/web-Gradio-F97316.svg)](https://www.gradio.app/)
+[![GitHub Pages](https://img.shields.io/badge/docs-GitHub%20Pages-2F6F9F.svg)](https://pauprezt.github.io/PADS/)
+[![Tests](https://img.shields.io/badge/tests-10%2F10_passing-brightgreen.svg)](#testing)
 
 </div>
 
@@ -32,17 +34,25 @@ The combination of those three placements falls into one of eight emotion octant
 This repository contains a rebuild of the original PADS code that focuses on three goals:
 
 1. **A clean, pip-installable library** (`pads/`) — feature extraction, models, inference, and visualisation are now separable, documented, and individually testable.
-2. **A web interface** (`web/app.py`) — replaces the original PySide6 desktop dashboard with a Streamlit app that runs in the browser, on any OS, with no Qt dependency.
+2. **Web interfaces** (`web/app.py`, `web/gradio_app.py`, and `docs/`) - Streamlit and Gradio apps for audio upload/recording plus a GitHub Pages landing page for users.
 3. **Measurable optimisations** — vectorised framing, cached mel filterbanks, batched inference. ~**2.3x faster** on the spectrogram pipeline with **numerically identical** output (max drift `<3e-6`).
 
 ---
 
 ## Quickstart
 
+Install directly from GitHub:
+
 ```bash
-git clone <this-repo>
-cd PADS-optimized
-pip install -r requirements.txt
+pip install git+https://github.com/PauPerezT/PADS.git
+```
+
+For local development:
+
+```bash
+git clone https://github.com/PauPerezT/PADS.git
+cd PADS
+pip install -e ".[all]"
 ```
 
 Place the pre-trained checkpoints from the [original PADS release](https://github.com/PauPerezT/PADS) in `checkpoints/one_sec/` (or in `checkpoints/` for legacy `.ckp` files).
@@ -61,10 +71,12 @@ print(result.summary())
 df = result.to_dataframe()    # one row per 1-second clip
 ```
 
-…or launch the browser interface:
+...or launch a browser interface:
 
 ```bash
 streamlit run web/app.py
+# or
+gradio web/gradio_app.py
 ```
 
 ---
@@ -83,12 +95,15 @@ PADS-optimized/
 │   ├── emotions.py        # Mehrabian PAD octant mapping
 │   └── visualization.py   # Plotly helpers
 ├── web/
-│   └── app.py             # Streamlit web interface
+│   ├── app.py             # Streamlit web interface
+│   └── gradio_app.py      # Gradio upload/recording interface
+├── docs/
+│   └── index.html         # GitHub Pages landing page
 ├── examples/
 │   ├── quickstart.py      # Process one file
 │   └── batch_extract.py   # Process a whole folder
 ├── tests/
-│   └── test_pipeline.py   # 9 pytest checks (run without checkpoints)
+│   └── test_pipeline.py   # 10 pytest checks (run without checkpoints)
 ├── checkpoints/           # Drop the trained .ckpt files here
 ├── data_norm/             # param_c{1,2,3}.json (legacy normalisation)
 ├── Assets/
@@ -202,9 +217,24 @@ The eight octants follow the standard Mehrabian PAD coding (`+` = high, `-` = lo
 
 ---
 
-## Web interface
+## Web interfaces
 
-The Streamlit app reproduces (and extends) the original PySide6 dashboard:
+PADS includes two runnable interfaces plus a static GitHub Pages landing page.
+
+### Gradio
+
+The Gradio app is the simplest option for users who want to upload or record audio in the browser:
+
+```bash
+pip install -e ".[gradio]"
+gradio web/gradio_app.py
+```
+
+It lets users choose PAD dimensions, posterior probabilities, embeddings, and PAD-to-emotion conversion outputs. The same file can be used as the app entry point for a Hugging Face Space.
+
+### Streamlit
+
+The Streamlit app provides a richer dashboard:
 
 * upload an audio file (`.wav`, `.mp3`, `.flac`, `.ogg`, `.m4a`), record from the browser where supported, or use a built-in demo;
 * select which PAD dimensions to extract: arousal, valence/pleasure, dominance, or any subset;
@@ -213,6 +243,7 @@ The Streamlit app reproduces (and extends) the original PySide6 dashboard:
 * download per-clip posterior probabilities as CSV and embeddings as NPZ.
 
 ```bash
+pip install -e ".[web]"
 streamlit run web/app.py
 ```
 
@@ -221,6 +252,16 @@ Compared to the original Qt dashboard, the web version:
 * runs anywhere with a browser (no Qt install);
 * uses interactive Plotly charts;
 * surfaces a "demo audio" button so visitors without a WAV file can still try the pipeline.
+
+### GitHub Pages
+
+The `docs/` folder contains a static landing page that can be served with GitHub Pages at:
+
+```text
+https://pauprezt.github.io/PADS/
+```
+
+GitHub Pages is static, so it cannot run the PyTorch model directly. It points users to the pip-installable library and the Gradio/Streamlit interfaces.
 
 ---
 
@@ -259,9 +300,9 @@ pip install pytest
 pytest tests/ -v
 ```
 
-Nine smoke tests cover signal processing, framing, filterbank caching, 3-channel tensor extraction (shape *and* clip count), batched normalisation, the `SelfConv` forward pass (with random init - no checkpoint needed), and emotion mapping.
+Ten smoke tests cover signal processing, framing, filterbank caching, 3-channel tensor extraction (shape *and* clip count), batched normalisation, the `SelfConv` forward pass (with random init - no checkpoint needed), emotion mapping, and partial-dimension results.
 
-All nine pass in `<0.3 s` on the synthetic input.
+All ten pass in `<0.3 s` on the synthetic input.
 
 ---
 
@@ -295,4 +336,3 @@ If you use this code in academic work, please cite:
 ## Acknowledgements
 
 This rebuild preserves the science and the trained checkpoints of the original PADS by Paula A. Pérez-Toro at Friedrich-Alexander-Universität Erlangen-Nürnberg. The contribution here is purely engineering: a faster pipeline, a cleaner API surface, a web UI, and proper packaging.
-

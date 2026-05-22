@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PADS Speech Analysis</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #17202a;
+        --muted: #52616b;
+        --line: #d9e2ec;
+        --panel: #f6f8fb;
+        --accent: #2f6f9f;
+      }
+      body {
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+        color: var(--ink);
+        background: #ffffff;
+        line-height: 1.55;
+      }
+      main {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 56px 24px;
+      }
+      header {
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 28px;
+        margin-bottom: 32px;
+      }
+      h1 {
+        font-size: 48px;
+        margin: 0 0 8px;
+        letter-spacing: 0;
+      }
+      h2 {
+        margin-top: 34px;
+        font-size: 24px;
+      }
+      p {
+        color: var(--muted);
+        max-width: 760px;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 24px;
+      }
+      a.button {
+        display: inline-block;
+        padding: 10px 14px;
+        border-radius: 6px;
+        border: 1px solid var(--accent);
+        color: #ffffff;
+        background: var(--accent);
+        text-decoration: none;
+        font-weight: 700;
+      }
+      a.button.secondary {
+        color: var(--accent);
+        background: #ffffff;
+      }
+      pre {
+        overflow-x: auto;
+        padding: 16px;
+        border-radius: 6px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+      }
+      code {
+        font-family: Consolas, Monaco, monospace;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+      }
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 16px;
+        background: #ffffff;
+      }
+      .card h3 {
+        margin-top: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>PADS</h1>
+        <p>
+          Pleasure-Arousal-Dominance analysis from speech. PADS extracts PAD
+          posterior probabilities, optional embeddings, and emotion-octant
+          summaries from audio recordings.
+        </p>
+        <div class="actions">
+          <a class="button" href="https://github.com/PauPerezT/PADS">Repository</a>
+          <a class="button secondary" href="https://github.com/PauPerezT/PADS#web-interface">Run the web interface</a>
+        </div>
+      </header>
+
+      <section>
+        <h2>Install the Python library</h2>
+        <pre><code>pip install git+https://github.com/PauPerezT/PADS.git</code></pre>
+        <p>
+          After installation, use <code>from pads import PADExtractor</code>.
+          The trained checkpoints are required for model inference.
+        </p>
+      </section>
+
+      <section>
+        <h2>Use it in Python</h2>
+        <pre><code>from pads import PADExtractor
+
+extractor = PADExtractor(checkpoints_dir="checkpoints/one_sec")
+result = extractor.extract(
+    "speech.wav",
+    dims=("arousal", "valence", "dominance"),
+    return_embeddings=True,
+)
+
+print(result.to_dataframe())
+print(result.dominant_emotion().name)</code></pre>
+      </section>
+
+      <section>
+        <h2>Interfaces</h2>
+        <div class="grid">
+          <div class="card">
+            <h3>Gradio</h3>
+            <p>Upload or record audio, select PAD dimensions, and export posteriors or embeddings.</p>
+            <pre><code>pip install -e ".[gradio]"
+gradio web/gradio_app.py</code></pre>
+          </div>
+          <div class="card">
+            <h3>Streamlit</h3>
+            <p>Interactive waveform, spectrogram, timeline, radar, and emotion distribution views.</p>
+            <pre><code>pip install -e ".[web]"
+streamlit run web/app.py</code></pre>
+          </div>
+          <div class="card">
+            <h3>GitHub Pages</h3>
+            <p>This page is static. It documents the package and links users to runnable interfaces.</p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Citation</h2>
+        <p>
+          Pérez-Toro, P. A. (2025). <em>Acoustic and Linguistic Analysis in
+          Neurological and Psychiatric Disorders</em>. Logos Verlag Berlin GmbH.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

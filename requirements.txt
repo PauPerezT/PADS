@@ -11,6 +11,7 @@ plotly>=5.18
 
 # Web interface
 streamlit>=1.30
+gradio>=4.0
 
 # Development / tests (optional)
 pytest>=7
