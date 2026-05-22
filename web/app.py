@@ -50,8 +50,8 @@ from pads.emotions import EMOTION_QUADRANTS
 # --- page config ----------------------------------------------------------------
 
 st.set_page_config(
-    page_title="PADS - Speech Emotion Explorer",
-    page_icon="[*]",
+    page_title="PADS - Speech PAD Analysis",
+    page_icon="PAD",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -60,24 +60,26 @@ st.set_page_config(
 CUSTOM_CSS = """
 <style>
 .metric-big {
-    background: linear-gradient(135deg, #7B61FF 0%, #4C78A8 100%);
-    border-radius: 14px;
+    background: #f6f8fb;
+    border: 1px solid #d9e2ec;
+    border-radius: 8px;
     padding: 16px 18px;
-    color: white;
+    color: #17202a;
     margin-bottom: 10px;
 }
-.metric-big h3 { margin: 0; font-size: 14px; opacity: 0.85; font-weight: 500; }
+.metric-big h3 { margin: 0; font-size: 14px; color: #52616b; font-weight: 600; }
 .metric-big p  { margin: 6px 0 0; font-size: 28px; font-weight: 700; }
 .emotion-card {
-    background: #1f1f29;
-    border-radius: 14px;
+    background: #17202a;
+    border-radius: 8px;
     padding: 22px;
     text-align: center;
-    border: 1px solid #2c2c3c;
+    border: 1px solid #263445;
+    color: #ffffff;
 }
 .emotion-card .name { font-size: 32px; font-weight: 700; margin: 6px 0; }
 .emotion-card .glyph { font-size: 56px; }
-.small-note { color: #8a8a99; font-size: 13px; }
+.small-note { color: #c7d0d9; font-size: 13px; }
 </style>
 """
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
@@ -108,10 +110,27 @@ with st.sidebar:
             help="Folder containing param_c{1,2,3}.json (legacy normalisation).",
         )
 
+    st.markdown("### Dimensions")
+    dimension_options = {
+        "Arousal": "arousal",
+        "Valence / pleasure": "valence",
+        "Dominance": "dominance",
+    }
+    selected_dimension_labels = st.multiselect(
+        "PAD dimensions",
+        list(dimension_options.keys()),
+        default=list(dimension_options.keys()),
+    )
+    selected_dims = tuple(dimension_options[label] for label in selected_dimension_labels)
+
+    st.markdown("### Outputs")
+    show_posteriors = st.checkbox("Posterior probabilities", value=True)
+    return_embeddings = st.checkbox("Embeddings", value=False)
+    show_emotions = st.checkbox("PAD-to-emotion conversion", value=True)
+
     st.markdown("### Inference")
     device = st.selectbox("Device", ["cpu", "cuda"], index=0)
     batch_size = st.slider("Batch size", 1, 64, 16)
-    return_embeddings = st.checkbox("Return embeddings", value=False)
 
     st.markdown("---")
     st.caption(
@@ -145,26 +164,34 @@ def load_audio_bytes(buf: bytes, suffix: str):
 
 # --- main UI --------------------------------------------------------------------
 
-st.title("PADS - Speech Emotion Explorer")
-st.markdown(
-    "Upload an audio recording, and PADS will predict the speaker's "
-    "**Pleasure (Valence)**, **Arousal**, and **Dominance** over time."
-)
+st.title("PADS")
+st.subheader("Pleasure-Arousal-Dominance analysis from speech")
 
-uploaded = st.file_uploader(
-    "Choose an audio file (wav, mp3, flac, ogg, m4a)",
-    type=["wav", "mp3", "flac", "ogg", "m4a"],
-    accept_multiple_files=False,
-)
+tab_upload, tab_record, tab_demo = st.tabs(["Upload audio", "Record audio", "Demo"])
 
-col_demo, col_rec = st.columns([1, 2])
-with col_demo:
-    use_demo = st.button("Use synthetic demo audio", use_container_width=True)
-with col_rec:
-    st.caption("Tip: live recording is supported on Chrome via the browser's mic API.")
+uploaded = None
+recorded = None
+use_demo = False
+
+with tab_upload:
+    uploaded = st.file_uploader(
+        "Audio file",
+        type=["wav", "mp3", "flac", "ogg", "m4a"],
+        accept_multiple_files=False,
+        label_visibility="collapsed",
+    )
+
+with tab_record:
+    if hasattr(st, "audio_input"):
+        recorded = st.audio_input("Microphone recording", label_visibility="collapsed")
+    else:
+        st.info("Microphone recording is available in newer Streamlit versions.")
+
+with tab_demo:
+    use_demo = st.button("Load demo audio", use_container_width=True)
 
 # Demo audio generation (for users without a file handy).
-if use_demo and uploaded is None:
+if use_demo and uploaded is None and recorded is None:
     sr = 16000
     duration = 4.0
     t = np.linspace(0, duration, int(sr * duration), endpoint=False)
@@ -182,18 +209,16 @@ if use_demo and uploaded is None:
 
 # Resolve waveform.
 wav, sr = None, 16000
-if uploaded is not None:
-    suffix = os.path.splitext(uploaded.name)[1] or ".wav"
-    wav, sr, _path = load_audio_bytes(uploaded.getvalue(), suffix)
+input_file = uploaded or recorded
+if input_file is not None:
+    suffix = os.path.splitext(input_file.name)[1] or ".wav"
+    wav, sr, _path = load_audio_bytes(input_file.getvalue(), suffix)
 elif "_demo_wav" in st.session_state:
     wav = st.session_state["_demo_wav"]
     sr = st.session_state["_demo_sr"]
 
 if wav is None:
-    st.info(
-        "Upload a file above, or click *Use synthetic demo audio* to try the pipeline "
-        "with a tone-based stand-in."
-    )
+    st.info("Add an audio file, record from the browser, or load the demo audio.")
     st.stop()
 
 # Show the waveform + an audio player.
@@ -234,7 +259,11 @@ if not ckpt_ok:
     )
     st.stop()
 
-if st.button("Run PAD inference", type="primary"):
+if not selected_dims:
+    st.warning("Select at least one PAD dimension in the sidebar.")
+    st.stop()
+
+if st.button("Analyze audio", type="primary", use_container_width=True):
     try:
         extractor = get_extractor(ckpt_dir, legacy, data_norm_dir, device)
     except Exception as e:
@@ -245,6 +274,7 @@ if st.button("Run PAD inference", type="primary"):
         try:
             result = extractor.extract(
                 wav, sample_rate=sr,
+                dims=selected_dims,
                 batch_size=batch_size,
                 return_embeddings=return_embeddings,
             )
@@ -255,18 +285,21 @@ if st.button("Run PAD inference", type="primary"):
     st.success(f"Done. {result.n_clips} clips analysed.")
 
     # --- summary cards ---
-    top_em = result.dominant_emotion()
-    c1, c2, c3, c4 = st.columns([1, 1, 1, 1.4])
-    for col, name, val in zip(
-        (c1, c2, c3),
-        ("Arousal", "Valence", "Dominance"),
-        (result.arousal_mean, result.valence_mean, result.dominance_mean),
-    ):
+    metric_values = [
+        ("Arousal", result.arousal_mean, result.arousal.size),
+        ("Valence", result.valence_mean, result.valence.size),
+        ("Dominance", result.dominance_mean, result.dominance.size),
+    ]
+    visible_metrics = [metric for metric in metric_values if metric[2]]
+    metric_cols = st.columns(max(1, len(visible_metrics)))
+    for col, (name, val, _size) in zip(metric_cols, visible_metrics):
         col.markdown(
             f"<div class='metric-big'><h3>{name}</h3><p>{val:.2f}</p></div>",
             unsafe_allow_html=True,
         )
-    with c4:
+
+    if show_emotions and result.has_all_dimensions():
+        top_em = result.dominant_emotion()
         st.markdown(
             f"<div class='emotion-card'>"
             f"<div class='glyph'>{top_em.emoji}</div>"
@@ -275,17 +308,22 @@ if st.button("Run PAD inference", type="primary"):
             f"</div>",
             unsafe_allow_html=True,
         )
+    elif show_emotions:
+        st.info("PAD-to-emotion conversion needs arousal, valence, and dominance.")
 
-    st.markdown("---")
-    col_a, col_b = st.columns([2, 1])
-    with col_a:
-        st.plotly_chart(plot_pad_timeline(result), use_container_width=True)
-    with col_b:
-        st.plotly_chart(plot_pad_radar(result), use_container_width=True)
+    if show_posteriors:
+        st.markdown("---")
+        col_a, col_b = st.columns([2, 1])
+        with col_a:
+            st.plotly_chart(plot_pad_timeline(result), use_container_width=True)
+        with col_b:
+            st.plotly_chart(plot_pad_radar(result), use_container_width=True)
 
-    st.plotly_chart(plot_emotion_distribution(result), use_container_width=True)
+    if show_emotions and result.has_all_dimensions():
+        st.plotly_chart(plot_emotion_distribution(result), use_container_width=True)
 
-    with st.expander("Per-clip results table"):
+    if show_posteriors:
+        st.markdown("#### Per-clip posteriors")
         df = result.to_dataframe()
         st.dataframe(df, use_container_width=True)
         st.download_button(
@@ -293,6 +331,22 @@ if st.button("Run PAD inference", type="primary"):
             df.to_csv(index=False).encode("utf-8"),
             file_name="pad_posteriors.csv",
             mime="text/csv",
+        )
+
+    if return_embeddings and result.embeddings:
+        st.markdown("#### Embeddings")
+        emb_summary = {
+            dim: f"{values.shape[0]} clips x {values.shape[1]} features"
+            for dim, values in result.embeddings.items()
+        }
+        st.json(emb_summary)
+        emb_buf = io.BytesIO()
+        np.savez(emb_buf, **result.embeddings)
+        st.download_button(
+            "Download embeddings",
+            emb_buf.getvalue(),
+            file_name="pad_embeddings.npz",
+            mime="application/octet-stream",
         )
 
     with st.expander("PAD octant reference"):

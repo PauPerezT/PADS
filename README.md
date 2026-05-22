@@ -206,10 +206,11 @@ The eight octants follow the standard Mehrabian PAD coding (`+` = high, `-` = lo
 
 The Streamlit app reproduces (and extends) the original PySide6 dashboard:
 
-* upload any audio file (`.wav`, `.mp3`, `.flac`, `.ogg`, `.m4a`) or use a built-in synthetic demo;
-* see the waveform, the three multi-resolution log-mel spectrograms, and the PAD posteriors per second;
-* radar chart of the mean PAD, dominant-emotion card, and time-spent-per-emotion bar chart;
-* download per-clip results as CSV.
+* upload an audio file (`.wav`, `.mp3`, `.flac`, `.ogg`, `.m4a`), record from the browser where supported, or use a built-in demo;
+* select which PAD dimensions to extract: arousal, valence/pleasure, dominance, or any subset;
+* choose posterior probabilities, embeddings, and PAD-to-emotion conversion outputs;
+* inspect the waveform, three multi-resolution log-mel spectrograms, PAD timelines, mean posterior radar chart, dominant emotion, and time-spent-per-emotion chart;
+* download per-clip posterior probabilities as CSV and embeddings as NPZ.
 
 ```bash
 streamlit run web/app.py

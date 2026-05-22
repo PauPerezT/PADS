@@ -70,24 +70,50 @@ class PADResult:
 
     @property
     def n_clips(self) -> int:
-        return int(self.arousal.shape[0])
+        for values in (self.arousal, self.valence, self.dominance):
+            if values.size:
+                return int(values.shape[0])
+        return 0
+
+    def available_dimensions(self) -> List[str]:
+        """Return the PAD dimensions present in this result."""
+        return [
+            dim for dim, values in (
+                ("arousal", self.arousal),
+                ("valence", self.valence),
+                ("dominance", self.dominance),
+            )
+            if values.size
+        ]
+
+    def has_all_dimensions(self) -> bool:
+        """Return True when arousal, valence, and dominance are all present."""
+        return all(values.size for values in (self.arousal, self.valence, self.dominance))
+
+    @staticmethod
+    def _mean_or_nan(values: np.ndarray) -> float:
+        return float(values.mean()) if values.size else float("nan")
 
     @property
     def arousal_mean(self) -> float:
-        return float(self.arousal.mean()) if self.n_clips else 0.0
+        return self._mean_or_nan(self.arousal)
 
     @property
     def valence_mean(self) -> float:
-        return float(self.valence.mean()) if self.n_clips else 0.0
+        return self._mean_or_nan(self.valence)
 
     @property
     def dominance_mean(self) -> float:
-        return float(self.dominance.mean()) if self.n_clips else 0.0
+        return self._mean_or_nan(self.dominance)
 
     def dominant_emotion(self):
+        if not self.has_all_dimensions():
+            raise ValueError("dominant_emotion requires arousal, valence, and dominance")
         return pad_to_emotion(self.valence_mean, self.arousal_mean, self.dominance_mean)
 
     def emotion_distribution(self) -> Dict[str, float]:
+        if not self.has_all_dimensions():
+            raise ValueError("emotion_distribution requires arousal, valence, and dominance")
         return emotion_distribution(self.valence, self.arousal, self.dominance)
 
     def timestamps(self) -> np.ndarray:
@@ -97,22 +123,30 @@ class PADResult:
 
     def summary(self) -> str:
         """Human-readable summary string."""
-        em = self.dominant_emotion()
-        return (
-            f"PADResult: {self.n_clips} clips, "
-            f"A={self.arousal_mean:.2f} V={self.valence_mean:.2f} "
-            f"D={self.dominance_mean:.2f} -> {em.name} {em.emoji}"
-        )
+        parts = []
+        if self.arousal.size:
+            parts.append(f"A={self.arousal_mean:.2f}")
+        if self.valence.size:
+            parts.append(f"V={self.valence_mean:.2f}")
+        if self.dominance.size:
+            parts.append(f"D={self.dominance_mean:.2f}")
+        summary = f"PADResult: {self.n_clips} clips, " + " ".join(parts)
+        if self.has_all_dimensions():
+            em = self.dominant_emotion()
+            summary += f" -> {em.name} {em.emoji}"
+        return summary
 
     def to_dataframe(self):
         """Return a pandas DataFrame (one row per clip)."""
         import pandas as pd
-        return pd.DataFrame({
-            "time_s": self.timestamps(),
-            "arousal": self.arousal,
-            "valence": self.valence,
-            "dominance": self.dominance,
-        })
+        data = {"time_s": self.timestamps()}
+        if self.arousal.size:
+            data["arousal"] = self.arousal
+        if self.valence.size:
+            data["valence"] = self.valence
+        if self.dominance.size:
+            data["dominance"] = self.dominance
+        return pd.DataFrame(data)
 
 
 # -----------------------------------------------------------------------------

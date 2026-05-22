@@ -137,5 +137,21 @@ def test_emotion_distribution_sums_to_one():
     assert abs(sum(dist.values()) - 1.0) < 1e-6
 
 
+def test_pad_result_supports_partial_dimensions():
+    from pads.inference import PADResult
+    result = PADResult(
+        arousal=np.empty(0, dtype=np.float32),
+        valence=np.array([0.2, 0.8], dtype=np.float32),
+        dominance=np.empty(0, dtype=np.float32),
+    )
+    assert result.n_clips == 2
+    assert result.available_dimensions() == ["valence"]
+    assert not result.has_all_dimensions()
+    df = result.to_dataframe()
+    assert list(df.columns) == ["time_s", "valence"]
+    with pytest.raises(ValueError):
+        result.dominant_emotion()
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
