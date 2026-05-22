@@ -134,8 +134,16 @@ print(features["emotion"])</code></pre>
           <div class="card">
             <h3>Gradio</h3>
             <p>Upload or record audio, select PAD dimensions, and export posteriors or embeddings.</p>
-            <pre><code>pip install "pads[gradio] @ git+https://github.com/PauPerezT/PADS.git"
+            <pre><code>pip install git+https://github.com/PauPerezT/PADS.git
+pip install gradio
 pads-gradio</code></pre>
+          </div>
+          <div class="card">
+            <h3>Emotion tracking</h3>
+            <p>Compare several recordings or inspect how PAD estimates and emotion labels move over time.</p>
+            <pre><code>pip install git+https://github.com/PauPerezT/PADS.git
+pip install gradio
+pads-tracking</code></pre>
           </div>
           <div class="card">
             <h3>Streamlit</h3>

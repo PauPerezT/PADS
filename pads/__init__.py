@@ -10,15 +10,9 @@ Quickstart
     >>> features = extract_features("audio.wav", outputs=("posteriors", "emotion"))
     >>> print(features["posteriors"].head())
 
-The library is organised in three layers:
-
-* ``pads.features``      - low-level mel-spectrogram tensor extraction (no torch).
-* ``pads.models``        - PyTorch model definitions (requires torch).
-* ``pads.inference``     - high-level :class:`PADExtractor` (requires torch).
-
-Importing :mod:`pads` does *not* import PyTorch. The ``PADExtractor`` /
-``PADResult`` symbols are loaded lazily the first time they are accessed,
-so users that only need feature extraction don't pay the torch import cost.
+Importing :mod:`pads` does NOT import PyTorch. The torch-requiring symbols
+(``PADExtractor``, ``PADResult``, ``extract_features``, ``SelfConv``) are
+loaded lazily on first access.
 """
 
 from __future__ import annotations
@@ -37,10 +31,10 @@ __version__ = "1.0.0"
 
 # Names exported lazily (require torch).
 _LAZY = {
-    "PADExtractor":   ("pads.inference", "PADExtractor"),
-    "PADResult":      ("pads.inference", "PADResult"),
+    "PADExtractor":     ("pads.inference", "PADExtractor"),
+    "PADResult":        ("pads.inference", "PADResult"),
     "extract_features": ("pads.inference", "extract_features"),
-    "SelfConv":       ("pads.models",    "SelfConv"),
+    "SelfConv":         ("pads.models",    "SelfConv"),
 }
 
 

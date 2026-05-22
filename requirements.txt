@@ -6,10 +6,10 @@ soundfile>=0.12
 torch>=2.0
 pandas>=1.5
 
-# Visualisation (used by pads.visualization and the web app)
+# Visualisation (used by pads.visualization and the web apps)
 plotly>=5.18
 
-# Web interface
+# Web interfaces
 streamlit>=1.30
 gradio>=4.0
 

@@ -34,7 +34,7 @@ The combination of those three placements falls into one of eight emotion octant
 This repository contains a rebuild of the original PADS code that focuses on three goals:
 
 1. **A clean, pip-installable feature extractor** (`pads/`) - one function can return PAD posteriors, embeddings, and emotion labels.
-2. **Web interfaces** (`web/app.py`, `web/gradio_app.py`, and `docs/`) - Streamlit and Gradio apps for audio upload/recording plus a GitHub Pages landing page for users.
+2. **Web interfaces** (`web/app.py`, `web/gradio_app.py`, `web/emotion_tracking_demo.py`, and `docs/`) - Streamlit and Gradio apps for audio upload/recording, feature extraction, and emotion tracking.
 3. **Measurable optimisations** - vectorised framing, cached mel filterbanks, batched inference. ~**2.3x faster** on the spectrogram pipeline with **numerically identical** output (max drift `<3e-6`).
 
 ---
@@ -52,13 +52,15 @@ pip install git+https://github.com/PauPerezT/PADS.git
 With the Gradio interface:
 
 ```bash
-pip install "pads[gradio] @ git+https://github.com/PauPerezT/PADS.git"
+pip install git+https://github.com/PauPerezT/PADS.git
+pip install gradio
 ```
 
 With both web interfaces:
 
 ```bash
-pip install "pads[all] @ git+https://github.com/PauPerezT/PADS.git"
+pip install git+https://github.com/PauPerezT/PADS.git
+pip install gradio streamlit plotly
 ```
 
 For local development:
@@ -92,6 +94,7 @@ emotion = features["emotion"]            # dominant PAD emotion, if all 3 dimens
 
 ```bash
 pads-gradio                     # Gradio, easiest for users
+pads-tracking                   # Gradio emotion tracking / compare recordings
 streamlit run web/app.py        # richer dashboard
 ```
 
@@ -112,7 +115,8 @@ PADS-optimized/
 │   └── visualization.py   # Plotly helpers
 ├── web/
 │   ├── app.py             # Streamlit web interface
-│   └── gradio_app.py      # Gradio upload/recording interface
+│   ├── gradio_app.py      # Gradio upload/recording interface
+│   └── emotion_tracking_demo.py  # Gradio emotion-tracking interface
 ├── docs/
 │   └── index.html         # GitHub Pages landing page
 ├── examples/
@@ -235,7 +239,7 @@ The eight octants follow the standard Mehrabian PAD coding (`+` = high, `-` = lo
 
 ## Web interfaces
 
-PADS includes two runnable interfaces plus a static GitHub Pages landing page.
+PADS includes runnable browser interfaces plus a static GitHub Pages landing page.
 
 ### Gradio
 
@@ -247,6 +251,18 @@ pads-gradio
 ```
 
 It lets users choose PAD dimensions, posterior probabilities, embeddings, and PAD-to-emotion conversion outputs. The root `app.py` is also included for Hugging Face Spaces.
+
+### Emotion Tracking Demo
+
+The emotion-tracking Gradio demo is useful when users want to compare several recordings or inspect how PAD estimates move through one recording:
+
+```bash
+pip install git+https://github.com/PauPerezT/PADS.git
+pip install gradio
+pads-tracking
+```
+
+It returns a short tracking summary, a recording-level table, and a per-clip timeline with arousal, valence, dominance, and PAD-to-emotion labels. Users can ask built-in tracking questions such as where arousal is highest, where valence is lowest, or which recording sounds most dominant.
 
 ### Streamlit
 
@@ -278,13 +294,6 @@ https://pauprezt.github.io/PADS/
 ```
 
 GitHub Pages is static, so it cannot run the PyTorch model directly. It points users to the pip-installable library and the Gradio/Streamlit interfaces.
-
-To enable it in GitHub, use **Settings -> Pages -> Build and deployment -> Deploy from a branch**, then choose:
-
-```text
-Branch: main
-Folder: /docs
-```
 
 ---
 

@@ -1,5 +1,5 @@
 # Convenience targets for PADS development.
-.PHONY: install dev test web gradio bench clean
+.PHONY: install dev test web gradio tracking bench clean
 
 install:
 	pip install -r requirements.txt
@@ -14,7 +14,10 @@ web:
 	streamlit run web/app.py
 
 gradio:
-	gradio web/gradio_app.py
+	python -m pads.gradio_app
+
+tracking:
+	python -m pads.tracking_demo
 
 clean:
 	rm -rf build dist *.egg-info .pytest_cache

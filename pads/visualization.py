@@ -1,16 +1,12 @@
 """
 Plotly visualisations for PADResult objects.
 
-Pure helpers - they take a :class:`PADResult` (or arrays) and return Plotly
-``Figure`` objects ready to render in Streamlit, Jupyter, or any web app.
-
-We use Plotly rather than matplotlib (the original PADS dependency) so
-that figures render interactively in browsers without an Agg backend.
+Pure helpers - take a PADResult (or arrays) and return Plotly Figures.
 """
 
 from __future__ import annotations
 
-from typing import Iterable, Optional
+from typing import Optional
 
 import numpy as np
 
@@ -32,15 +28,15 @@ def plot_pad_timeline(result, height: int = 380):
 
     t = result.timestamps()
     fig = go.Figure()
-    traces = [
-        ("Arousal", result.arousal, "#D1495B"),
-        ("Valence", result.valence, "#2F6F9F"),
-        ("Dominance", result.dominance, "#3A7D44"),
-    ]
-    for name, values, color in traces:
-        if values.size:
-            fig.add_trace(go.Scatter(x=t, y=values, mode="lines+markers",
-                                     name=name, line=dict(color=color, width=2)))
+    if result.arousal.size:
+        fig.add_trace(go.Scatter(x=t, y=result.arousal, mode="lines+markers",
+                                 name="Arousal", line=dict(color="#E45756", width=2)))
+    if result.valence.size:
+        fig.add_trace(go.Scatter(x=t, y=result.valence, mode="lines+markers",
+                                 name="Valence", line=dict(color="#4C78A8", width=2)))
+    if result.dominance.size:
+        fig.add_trace(go.Scatter(x=t, y=result.dominance, mode="lines+markers",
+                                 name="Dominance", line=dict(color="#54A24B", width=2)))
     fig.add_hline(y=0.5, line_dash="dot", line_color="gray", opacity=0.5)
     fig.update_layout(
         title="PAD posteriors over time",
@@ -59,21 +55,16 @@ def plot_pad_radar(result, height: int = 380):
     _ensure_plotly()
     import plotly.graph_objects as go
 
-    pairs = [
-        ("Arousal", result.arousal_mean, result.arousal.size),
-        ("Valence", result.valence_mean, result.valence.size),
-        ("Dominance", result.dominance_mean, result.dominance.size),
-    ]
-    labels = [label for label, _, size in pairs if size]
-    means = [value for _, value, size in pairs if size]
+    means = [result.arousal_mean, result.valence_mean, result.dominance_mean]
+    labels = ["Arousal", "Valence", "Dominance"]
     fig = go.Figure()
     fig.add_trace(go.Scatterpolar(
         r=means + [means[0]],
         theta=labels + [labels[0]],
         fill="toself",
         name="Mean posteriors",
-        line=dict(color="#2F6F9F"),
-        fillcolor="rgba(47, 111, 159, 0.25)",
+        line=dict(color="#7B61FF"),
+        fillcolor="rgba(123, 97, 255, 0.25)",
     ))
     fig.update_layout(
         polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
@@ -90,8 +81,6 @@ def plot_emotion_distribution(result, height: int = 380):
     _ensure_plotly()
     import plotly.graph_objects as go
 
-    if not result.has_all_dimensions():
-        raise ValueError("Emotion distribution requires arousal, valence, and dominance")
     dist = result.emotion_distribution()
     names = list(dist.keys())
     vals = [dist[n] * 100 for n in names]
@@ -101,7 +90,7 @@ def plot_emotion_distribution(result, height: int = 380):
 
     fig = go.Figure(go.Bar(
         x=vals, y=names, orientation="h",
-        marker=dict(color="#2F6F9F"),
+        marker=dict(color="#7B61FF"),
         text=[f"{v:.1f}%" for v in vals], textposition="outside",
     ))
     fig.update_layout(
@@ -121,9 +110,9 @@ def plot_mel_spectrogram(spec: np.ndarray, sample_rate: int = 16000,
     _ensure_plotly()
     import plotly.graph_objects as go
 
-    if spec.ndim == 3:  # take channel 0 if a tensor was passed
+    if spec.ndim == 3:
         spec = spec[0]
-    spec_t = spec.T  # frequency on y axis
+    spec_t = spec.T
     times = np.arange(spec.shape[0]) * step_s
     fig = go.Figure(go.Heatmap(
         z=spec_t,
@@ -147,7 +136,6 @@ def plot_waveform(wav: np.ndarray, sample_rate: int = 16000, height: int = 200):
     import plotly.graph_objects as go
 
     wav = np.asarray(wav).astype(np.float32)
-    # Downsample for plotting if waveform is very long.
     max_points = 4000
     if len(wav) > max_points:
         idx = np.linspace(0, len(wav) - 1, max_points).astype(int)
