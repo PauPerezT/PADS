@@ -154,6 +154,30 @@ result.dominant_emotion().name
 result.to_dataframe()
 ```
 
+You can choose which PAD dimensions to extract and which output representation you need:
+
+```python
+# Extract only one or two dimensions.
+arousal_only = ext.extract("speech.wav", dims=("arousal",))
+valence_dominance = ext.extract("speech.wav", dims=("valence", "dominance"))
+
+# Return posterior probabilities per 1-second clip.
+posteriors = ext.extract("speech.wav", dims=("arousal", "valence", "dominance"))
+posterior_table = posteriors.to_dataframe()
+
+# Return embeddings from the model before the final classifier.
+with_embeddings = ext.extract(
+    "speech.wav",
+    dims=("arousal", "valence", "dominance"),
+    return_embeddings=True,
+)
+arousal_embeddings = with_embeddings.embeddings["arousal"]
+
+# Convert PAD posteriors to emotion labels.
+dominant = posteriors.dominant_emotion()
+distribution = posteriors.emotion_distribution()
+```
+
 ### PAD -> emotion mapping
 
 ```python
@@ -240,33 +264,6 @@ All nine pass in `<0.3 s` on the synthetic input.
 
 ---
 
-## Pushing to GitHub
-
-This folder is **not yet a git repository** — the sandbox that produced it can't initialize git on a Windows-mounted folder. Run one of the helper scripts from your own terminal to set up git, configure Git LFS for the large checkpoint files, and push the code to a new branch on [PauPerezT/PADS](https://github.com/PauPerezT/PADS).
-
-**Windows PowerShell:**
-
-```powershell
-cd C:\Users\pama_\Documents\Claude\Projects\PADs\PADS-optimized
-.\scripts\push_to_github.ps1 -OrigRepo C:\path\to\your\local\PADS   # path to your existing clone (for checkpoints)
-```
-
-**Git Bash / macOS / Linux:**
-
-```bash
-cd PADS-optimized
-ORIG_REPO=/path/to/your/PADS bash scripts/push_to_github.sh
-```
-
-The script will:
-
-1. wipe any partial `.git` folder the sandbox left behind,
-2. `git init`, set your email/name,
-3. `git lfs install` and track `*.ckpt` + `*.ckp` so the trained models can live in the repo without hitting GitHub's 100 MB single-file limit,
-4. copy the checkpoint files from `$OrigRepo/checkpoints/` if you pointed it at your existing PADS clone,
-5. commit, create a branch named `optimized` (override with `-Branch` / `BRANCH=`), and push to `origin`.
-
-You'll need [Git LFS](https://git-lfs.com) installed and a GitHub Personal Access Token with `repo` scope ready when git prompts for credentials. After the push, open a PR at `https://github.com/PauPerezT/PADS/compare/optimized?expand=1`.
 
 ## Roadmap
 
@@ -279,14 +276,14 @@ You'll need [Git LFS](https://git-lfs.com) installed and a GitHub Personal Acces
 
 ## Citation
 
-If you use this code in academic work, please cite the original PADS paper(s) by Paula A. Pérez-Toro et al. and link back to the [upstream repository](https://github.com/PauPerezT/PADS).
+If you use this code in academic work, please cite:
 
 ```bibtex
-@misc{perez2024pads,
-  author = {Pérez-Toro, Paula Andrea and others},
-  title  = {PADS: Pleasure-Arousal-Dominance emotional state representations from Speech},
-  year   = {2024},
-  howpublished = {\url{https://github.com/PauPerezT/PADS}}
+@book{perez_toro_2025_acoustic_linguistic,
+  author    = {Pérez-Toro, P. A.},
+  title     = {Acoustic and Linguistic Analysis in Neurological and Psychiatric Disorders},
+  publisher = {Logos Verlag Berlin GmbH},
+  year      = {2025}
 }
 ```
 
@@ -297,3 +294,4 @@ If you use this code in academic work, please cite the original PADS paper(s) by
 ## Acknowledgements
 
 This rebuild preserves the science and the trained checkpoints of the original PADS by Paula A. Pérez-Toro at Friedrich-Alexander-Universität Erlangen-Nürnberg. The contribution here is purely engineering: a faster pipeline, a cleaner API surface, a web UI, and proper packaging.
+
