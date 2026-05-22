@@ -33,18 +33,32 @@ The combination of those three placements falls into one of eight emotion octant
 
 This repository contains a rebuild of the original PADS code that focuses on three goals:
 
-1. **A clean, pip-installable library** (`pads/`) — feature extraction, models, inference, and visualisation are now separable, documented, and individually testable.
+1. **A clean, pip-installable feature extractor** (`pads/`) - one function can return PAD posteriors, embeddings, and emotion labels.
 2. **Web interfaces** (`web/app.py`, `web/gradio_app.py`, and `docs/`) - Streamlit and Gradio apps for audio upload/recording plus a GitHub Pages landing page for users.
-3. **Measurable optimisations** — vectorised framing, cached mel filterbanks, batched inference. ~**2.3x faster** on the spectrogram pipeline with **numerically identical** output (max drift `<3e-6`).
+3. **Measurable optimisations** - vectorised framing, cached mel filterbanks, batched inference. ~**2.3x faster** on the spectrogram pipeline with **numerically identical** output (max drift `<3e-6`).
 
 ---
 
 ## Quickstart
 
+For most users, PADS is just a feature extractor.
+
 Install directly from GitHub:
 
 ```bash
 pip install git+https://github.com/PauPerezT/PADS.git
+```
+
+With the Gradio interface:
+
+```bash
+pip install "pads[gradio] @ git+https://github.com/PauPerezT/PADS.git"
+```
+
+With both web interfaces:
+
+```bash
+pip install "pads[all] @ git+https://github.com/PauPerezT/PADS.git"
 ```
 
 For local development:
@@ -57,34 +71,36 @@ pip install -e ".[all]"
 
 Place the pre-trained checkpoints from the [original PADS release](https://github.com/PauPerezT/PADS) in `checkpoints/one_sec/` (or in `checkpoints/` for legacy `.ckp` files).
 
-Then either use the library directly:
+Then extract features from one audio file:
 
 ```python
-from pads import PADExtractor
+from pads import extract_features
 
-extractor = PADExtractor(checkpoints_dir="checkpoints/one_sec")
-result = extractor.extract("speech.wav")
+features = extract_features(
+    "speech.wav",
+    checkpoints_dir="checkpoints/one_sec",
+    dimensions=("arousal", "valence", "dominance"),
+    outputs=("posteriors", "embeddings", "emotion"),
+)
 
-print(result.summary())
-# -> PADResult: 12 clips, A=0.72 V=0.61 D=0.55 -> Exuberant :D
-
-df = result.to_dataframe()    # one row per 1-second clip
+posteriors = features["posteriors"]      # pandas DataFrame, one row per clip
+embeddings = features["embeddings"]      # dict: arousal/valence/dominance arrays
+emotion = features["emotion"]            # dominant PAD emotion, if all 3 dimensions were extracted
 ```
 
 ...or launch a browser interface:
 
 ```bash
-streamlit run web/app.py
-# or
-gradio web/gradio_app.py
+pads-gradio                     # Gradio, easiest for users
+streamlit run web/app.py        # richer dashboard
 ```
 
 ---
-
 ## What's in the box
 
 ```
 PADS-optimized/
+├── app.py                 # Root Gradio entry point for simple launches / Spaces
 ├── pads/                  # The new Python library
 │   ├── __init__.py        # Public API (lazy-imports torch)
 │   ├── features.py        # 3-channel mel-spectrogram tensor builder
@@ -227,10 +243,10 @@ The Gradio app is the simplest option for users who want to upload or record aud
 
 ```bash
 pip install -e ".[gradio]"
-gradio web/gradio_app.py
+pads-gradio
 ```
 
-It lets users choose PAD dimensions, posterior probabilities, embeddings, and PAD-to-emotion conversion outputs. The same file can be used as the app entry point for a Hugging Face Space.
+It lets users choose PAD dimensions, posterior probabilities, embeddings, and PAD-to-emotion conversion outputs. The root `app.py` is also included for Hugging Face Spaces.
 
 ### Streamlit
 
@@ -336,3 +352,4 @@ If you use this code in academic work, please cite:
 ## Acknowledgements
 
 This rebuild preserves the science and the trained checkpoints of the original PADS by Paula A. Pérez-Toro at Friedrich-Alexander-Universität Erlangen-Nürnberg. The contribution here is purely engineering: a faster pipeline, a cleaner API surface, a web UI, and proper packaging.
+

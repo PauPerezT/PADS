@@ -45,6 +45,9 @@ Homepage = "https://github.com/PauPerezT/PADS"
 Documentation = "https://pauprezt.github.io/PADS/"
 Issues = "https://github.com/PauPerezT/PADS/issues"
 
+[project.scripts]
+pads-gradio = "pads.gradio_app:main"
+
 [tool.setuptools.packages.find]
 include = ["pads*"]
 exclude = ["tests*", "web*", "examples*"]

@@ -108,24 +108,24 @@
         <h2>Install the Python library</h2>
         <pre><code>pip install git+https://github.com/PauPerezT/PADS.git</code></pre>
         <p>
-          After installation, use <code>from pads import PADExtractor</code>.
+          After installation, use <code>from pads import extract_features</code>.
           The trained checkpoints are required for model inference.
         </p>
       </section>
 
       <section>
         <h2>Use it in Python</h2>
-        <pre><code>from pads import PADExtractor
+        <pre><code>from pads import extract_features
 
-extractor = PADExtractor(checkpoints_dir="checkpoints/one_sec")
-result = extractor.extract(
+features = extract_features(
     "speech.wav",
-    dims=("arousal", "valence", "dominance"),
-    return_embeddings=True,
+    checkpoints_dir="checkpoints/one_sec",
+    dimensions=("arousal", "valence", "dominance"),
+    outputs=("posteriors", "embeddings", "emotion"),
 )
 
-print(result.to_dataframe())
-print(result.dominant_emotion().name)</code></pre>
+print(features["posteriors"])
+print(features["emotion"])</code></pre>
       </section>
 
       <section>
@@ -134,8 +134,8 @@ print(result.dominant_emotion().name)</code></pre>
           <div class="card">
             <h3>Gradio</h3>
             <p>Upload or record audio, select PAD dimensions, and export posteriors or embeddings.</p>
-            <pre><code>pip install -e ".[gradio]"
-gradio web/gradio_app.py</code></pre>
+            <pre><code>pip install "pads[gradio] @ git+https://github.com/PauPerezT/PADS.git"
+pads-gradio</code></pre>
           </div>
           <div class="card">
             <h3>Streamlit</h3>

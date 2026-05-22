@@ -35,6 +35,7 @@ from .emotions import pad_to_emotion, emotion_distribution
 
 
 PAD_DIMENSIONS = ("arousal", "valence", "dominance")
+PAD_OUTPUTS = ("posteriors", "embeddings", "emotion")
 
 
 # -----------------------------------------------------------------------------
@@ -328,3 +329,66 @@ class PADExtractor:
             scores_chunks.append(s)
             emb_chunks.append(e)
         return torch.cat(scores_chunks, dim=0), torch.cat(emb_chunks, dim=0)
+
+
+def extract_features(
+    audio: str | Path | np.ndarray,
+    sample_rate: Optional[int] = None,
+    checkpoints_dir: str | Path = "checkpoints/one_sec",
+    dimensions: Sequence[str] = PAD_DIMENSIONS,
+    outputs: Sequence[str] = ("posteriors",),
+    device: str = "cpu",
+    batch_size: int = 32,
+    legacy: bool = False,
+    data_norm_dir: Optional[str | Path] = None,
+) -> Dict[str, object]:
+    """Convenience feature-extractor API.
+
+    This is the easiest entry point for users who want PADS as a feature
+    extractor rather than as a class-based pipeline.
+
+    Examples
+    --------
+    >>> from pads import extract_features
+    >>> out = extract_features(
+    ...     "speech.wav",
+    ...     dimensions=("arousal", "valence", "dominance"),
+    ...     outputs=("posteriors", "emotion"),
+    ... )
+    >>> out["posteriors"].head()
+    """
+    bad_dims = sorted(set(dimensions) - set(PAD_DIMENSIONS))
+    if bad_dims:
+        raise ValueError(f"Unknown dimensions {bad_dims}; expected values in {PAD_DIMENSIONS}")
+
+    bad_outputs = sorted(set(outputs) - set(PAD_OUTPUTS))
+    if bad_outputs:
+        raise ValueError(f"Unknown outputs {bad_outputs}; expected values in {PAD_OUTPUTS}")
+
+    extractor = PADExtractor(
+        checkpoints_dir=checkpoints_dir,
+        data_norm_dir=data_norm_dir,
+        device=device,
+        legacy=legacy,
+    )
+    result = extractor.extract(
+        audio,
+        sample_rate=sample_rate,
+        dims=dimensions,
+        batch_size=batch_size,
+        return_embeddings=("embeddings" in outputs),
+    )
+
+    features: Dict[str, object] = {"result": result}
+    if "posteriors" in outputs:
+        features["posteriors"] = result.to_dataframe()
+    if "embeddings" in outputs:
+        features["embeddings"] = result.embeddings
+    if "emotion" in outputs:
+        if result.has_all_dimensions():
+            features["emotion"] = result.dominant_emotion()
+            features["emotion_distribution"] = result.emotion_distribution()
+        else:
+            features["emotion"] = None
+            features["emotion_distribution"] = None
+    return features

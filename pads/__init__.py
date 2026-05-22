@@ -6,10 +6,9 @@ emotional features from speech signals.
 
 Quickstart
 ----------
-    >>> from pads import PADExtractor
-    >>> extractor = PADExtractor()
-    >>> result = extractor.extract("audio.wav")
-    >>> print(result.arousal_mean, result.valence_mean, result.dominance_mean)
+    >>> from pads import extract_features
+    >>> features = extract_features("audio.wav", outputs=("posteriors", "emotion"))
+    >>> print(features["posteriors"].head())
 
 The library is organised in three layers:
 
@@ -40,6 +39,7 @@ __version__ = "1.0.0"
 _LAZY = {
     "PADExtractor":   ("pads.inference", "PADExtractor"),
     "PADResult":      ("pads.inference", "PADResult"),
+    "extract_features": ("pads.inference", "extract_features"),
     "SelfConv":       ("pads.models",    "SelfConv"),
 }
 
@@ -60,6 +60,7 @@ def __dir__():
 __all__ = [
     "PADExtractor",
     "PADResult",
+    "extract_features",
     "SelfConv",
     "Spectrogram2DTensor",
     "SpectrogramConfig",
