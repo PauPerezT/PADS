@@ -1,0 +1,74 @@
+"""
+PADS - Pleasure-Arousal-Dominance representations from Speech.
+
+A lightweight Python library to extract PAD (Pleasure-Arousal-Dominance)
+emotional features from speech signals.
+
+Quickstart
+----------
+    >>> from pads import PADExtractor
+    >>> extractor = PADExtractor()
+    >>> result = extractor.extract("audio.wav")
+    >>> print(result.arousal_mean, result.valence_mean, result.dominance_mean)
+
+The library is organised in three layers:
+
+* ``pads.features``      - low-level mel-spectrogram tensor extraction (no torch).
+* ``pads.models``        - PyTorch model definitions (requires torch).
+* ``pads.inference``     - high-level :class:`PADExtractor` (requires torch).
+
+Importing :mod:`pads` does *not* import PyTorch. The ``PADExtractor`` /
+``PADResult`` symbols are loaded lazily the first time they are accessed,
+so users that only need feature extraction don't pay the torch import cost.
+"""
+
+from __future__ import annotations
+
+from .features import (
+    Spectrogram2DTensor,
+    SpectrogramConfig,
+    mel_filterbank,
+    log_mel_spectrum,
+    extract_pad_tensors,
+)
+from .normalize import normalize_spectrum, normalize_tensor_minmax
+from .emotions import pad_to_emotion, EMOTION_QUADRANTS
+
+__version__ = "1.0.0"
+
+# Names exported lazily (require torch).
+_LAZY = {
+    "PADExtractor":   ("pads.inference", "PADExtractor"),
+    "PADResult":      ("pads.inference", "PADResult"),
+    "SelfConv":       ("pads.models",    "SelfConv"),
+}
+
+
+def __getattr__(name):
+    if name in _LAZY:
+        import importlib
+        module_name, attr = _LAZY[name]
+        module = importlib.import_module(module_name)
+        return getattr(module, attr)
+    raise AttributeError(f"module 'pads' has no attribute {name!r}")
+
+
+def __dir__():
+    return sorted(list(globals().keys()) + list(_LAZY.keys()))
+
+
+__all__ = [
+    "PADExtractor",
+    "PADResult",
+    "SelfConv",
+    "Spectrogram2DTensor",
+    "SpectrogramConfig",
+    "mel_filterbank",
+    "log_mel_spectrum",
+    "extract_pad_tensors",
+    "normalize_spectrum",
+    "normalize_tensor_minmax",
+    "pad_to_emotion",
+    "EMOTION_QUADRANTS",
+    "__version__",
+]

@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pads"
+version = "1.0.0"
+description = "Pleasure-Arousal-Dominance emotional state representations from Speech"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "Apache-2.0" }
+authors = [
+    { name = "Paula A. Perez-Toro", email = "paula.andrea.perez@fau.de" },
+]
+keywords = ["speech", "emotion", "pad", "valence", "arousal", "dominance", "deep-learning"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Multimedia :: Sound/Audio :: Analysis",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "numpy>=1.22",
+    "scipy>=1.9",
+    "librosa>=0.10",
+    "soundfile>=0.12",
+    "torch>=2.0",
+    "pandas>=1.5",
+]
+
+[project.optional-dependencies]
+viz = ["plotly>=5.18"]
+web = ["streamlit>=1.30", "plotly>=5.18"]
+dev = ["pytest>=7", "pytest-cov", "ruff", "black"]
+
+[project.urls]
+Homepage = "https://github.com/PauPerezT/PADS"
+Issues = "https://github.com/PauPerezT/PADS/issues"
+
+[tool.setuptools.packages.find]
+include = ["pads*"]
+exclude = ["tests*", "web*", "examples*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra -q"

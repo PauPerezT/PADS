@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.pytest_cache/
+*.so
+
+# Distribution
+build/
+dist/
+*.whl
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+
+# Local data and large artifacts
+*.wav
+*.mp3
+*.flac
+*.ckp
+*.ckpt
+!tests/**/*.wav
+
+# OS
+.DS_Store
+Thumbs.db
