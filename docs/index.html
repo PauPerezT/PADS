@@ -100,6 +100,7 @@
         </p>
         <div class="actions">
           <a class="button" href="https://github.com/PauPerezT/PADS">Repository</a>
+          <a class="button secondary" href="./emotion-tracker/">Try static emotion tracker</a>
           <a class="button secondary" href="https://github.com/PauPerezT/PADS#web-interface">Run the web interface</a>
         </div>
       </header>
@@ -140,7 +141,12 @@ pads-gradio</code></pre>
           </div>
           <div class="card">
             <h3>Emotion tracking</h3>
-            <p>Compare several recordings or inspect how PAD estimates and emotion labels move over time.</p>
+            <p>Compare several recordings or inspect how PAD estimates and emotion labels move over time. The static browser preview runs from GitHub Pages; the Gradio command uses the Python package.</p>
+            <p><a href="./emotion-tracker/">Open the static browser demo</a></p>
+          </div>
+          <div class="card">
+            <h3>Gradio tracking</h3>
+            <p>Run checkpoint-based emotion tracking from the installed Python package.</p>
             <pre><code>pip install git+https://github.com/PauPerezT/PADS.git
 pip install gradio
 pads-tracking</code></pre>

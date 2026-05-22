@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PADS Emotion Tracking Demo</title>
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">PAD</div>
+        <div>
+          <h1>PADS Emotion Tracker</h1>
+          <p>Speech emotion tracking across pleasure, arousal, and dominance. This static browser demo uses lightweight client-side audio features; use the Python or Gradio apps for checkpoint inference.</p>
+        </div>
+      </div>
+      <div class="header-actions" aria-label="Session actions">
+        <label class="button primary">
+          <input id="audio-file" type="file" accept="audio/*" />
+          Load audio
+        </label>
+        <button id="record-button" class="button" type="button">Record</button>
+        <button id="play-button" class="icon-button" type="button" aria-label="Play timeline">&gt;</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="side-panel" aria-label="Controls">
+        <section class="panel-block">
+          <div class="section-heading">
+            <span>Demo Source</span>
+            <strong id="source-badge">Baseline</strong>
+          </div>
+          <div class="preset-grid" role="group" aria-label="Demo presets">
+            <button class="preset active" type="button" data-preset="baseline">
+              <span>Interview baseline</span>
+              <small>Measured, steady</small>
+            </button>
+            <button class="preset" type="button" data-preset="upbeat">
+              <span>Energetic call</span>
+              <small>Bright, active</small>
+            </button>
+            <button class="preset" type="button" data-preset="calm">
+              <span>Calm reflection</span>
+              <small>Positive, low arousal</small>
+            </button>
+            <button class="preset" type="button" data-preset="stress">
+              <span>Escalating stress</span>
+              <small>Tense, rising</small>
+            </button>
+          </div>
+        </section>
+
+        <section class="panel-block">
+          <div class="section-heading">
+            <span>Focus Window</span>
+            <strong id="time-readout">0.0s</strong>
+          </div>
+          <label class="field">
+            <span>Timeline position</span>
+            <input id="time-slider" type="range" min="0" max="1" value="0" />
+          </label>
+          <label class="field">
+            <span>Window length</span>
+            <select id="window-length">
+              <option value="2">2 seconds</option>
+              <option value="4" selected>4 seconds</option>
+              <option value="8">8 seconds</option>
+              <option value="12">12 seconds</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Smoothing</span>
+            <input id="smoothing" type="range" min="0" max="80" value="36" />
+          </label>
+        </section>
+
+        <section class="panel-block">
+          <div class="section-heading">
+            <span>Baseline</span>
+            <strong id="baseline-name">Interview baseline</strong>
+          </div>
+          <div class="baseline-readout">
+            <span>Positive valence</span>
+            <b id="baseline-valence">0%</b>
+            <span>Active arousal</span>
+            <b id="baseline-arousal">0%</b>
+            <span>Strong dominance</span>
+            <b id="baseline-dominance">0%</b>
+          </div>
+          <button id="set-baseline" class="button wide" type="button">Set current window as baseline</button>
+        </section>
+      </aside>
+
+      <section class="main-stage" aria-label="Emotion tracking dashboard">
+        <section class="state-panel">
+          <div class="emotion-result">
+            <img id="emotion-face" src="./assets/neutral.jpg" alt="Neutral expression" />
+            <div>
+              <span class="eyebrow">Current window</span>
+              <h2 id="emotion-label">Neutral</h2>
+              <p id="emotion-summary">Balanced energy and stable delivery.</p>
+            </div>
+          </div>
+          <div class="metric-strip" aria-label="PADS dimensions">
+            <article class="metric valence">
+              <div>
+                <span>Positive Valence</span>
+                <strong id="valence-value">0%</strong>
+              </div>
+              <i><b id="valence-bar"></b></i>
+              <small id="valence-sub">Negative 0%</small>
+            </article>
+            <article class="metric arousal">
+              <div>
+                <span>Active Arousal</span>
+                <strong id="arousal-value">0%</strong>
+              </div>
+              <i><b id="arousal-bar"></b></i>
+              <small id="arousal-sub">Passive 0%</small>
+            </article>
+            <article class="metric dominance">
+              <div>
+                <span>Strong Dominance</span>
+                <strong id="dominance-value">0%</strong>
+              </div>
+              <i><b id="dominance-bar"></b></i>
+              <small id="dominance-sub">Weak 0%</small>
+            </article>
+          </div>
+        </section>
+
+        <section class="chart-grid">
+          <article class="chart-panel wide">
+            <div class="chart-heading">
+              <h3>Audio Signal</h3>
+              <span id="duration-readout">0.0s</span>
+            </div>
+            <canvas id="waveform-canvas" height="190" aria-label="Audio waveform"></canvas>
+          </article>
+
+          <article class="chart-panel">
+            <div class="chart-heading">
+              <h3>Pleasure-Arousal Map</h3>
+              <span id="dominance-readout">Dominance 0%</span>
+            </div>
+            <canvas id="pad-canvas" height="260" aria-label="Pleasure arousal map"></canvas>
+          </article>
+
+          <article class="chart-panel">
+            <div class="chart-heading">
+              <h3>PADS Radar</h3>
+              <span>6 posteriors</span>
+            </div>
+            <canvas id="radar-canvas" height="260" aria-label="Emotion radar"></canvas>
+          </article>
+
+          <article class="chart-panel wide">
+            <div class="chart-heading">
+              <h3>Emotion Tracking</h3>
+              <span>0.5s windows</span>
+            </div>
+            <canvas id="timeline-canvas" height="240" aria-label="Emotion timeline"></canvas>
+          </article>
+
+          <article class="chart-panel">
+            <div class="chart-heading">
+              <h3>Baseline Comparison</h3>
+              <span id="delta-readout">Delta 0%</span>
+            </div>
+            <canvas id="bars-canvas" height="260" aria-label="Baseline comparison"></canvas>
+          </article>
+
+          <article class="chart-panel">
+            <div class="chart-heading">
+              <h3>Window Detail</h3>
+              <span id="window-readout">0.0s - 0.0s</span>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Valence</th>
+                  <th>Arousal</th>
+                  <th>Dominance</th>
+                </tr>
+              </thead>
+              <tbody id="window-table"></tbody>
+            </table>
+          </article>
+        </section>
+      </section>
+    </main>
+
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>

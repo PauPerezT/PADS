@@ -98,6 +98,8 @@ pads-tracking                   # Gradio emotion tracking / compare recordings
 streamlit run web/app.py        # richer dashboard
 ```
 
+GitHub Pages also includes a static browser emotion tracker at `docs/emotion-tracker/`. It lets visitors load or record audio directly in the browser and explore the PADS-style interface without installing Python. Because GitHub Pages is static, that demo uses lightweight client-side audio features; the installed Python and Gradio tools are the checkpoint-based path.
+
 ---
 ## What's in the box
 
@@ -118,7 +120,8 @@ PADS-optimized/
 │   ├── gradio_app.py      # Gradio upload/recording interface
 │   └── emotion_tracking_demo.py  # Gradio emotion-tracking interface
 ├── docs/
-│   └── index.html         # GitHub Pages landing page
+│   ├── index.html         # GitHub Pages landing page
+│   └── emotion-tracker/   # Static browser emotion-tracking demo
 ├── examples/
 │   ├── quickstart.py      # Process one file
 │   └── batch_extract.py   # Process a whole folder
@@ -293,7 +296,7 @@ The `docs/` folder contains a static landing page for GitHub Pages:
 https://pauprezt.github.io/PADS/
 ```
 
-GitHub Pages is static, so it cannot run the PyTorch model directly. It points users to the pip-installable library and the Gradio/Streamlit interfaces.
+GitHub Pages is static, so it cannot run the PyTorch model directly. It points users to the pip-installable library and the Gradio/Streamlit interfaces, and it hosts a static emotion-tracking preview in `docs/emotion-tracker/` where visitors can load or record audio in the browser.
 
 ---
 
